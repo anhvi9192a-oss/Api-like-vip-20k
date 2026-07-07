@@ -1,0 +1,70 @@
+import requests
+from telegram import Update
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+
+TOKEN = "8357488194:AAHlPMu4mtE3niyFJB-CYSyLufn3QamTtVs"
+ADMIN_ID = 8153387586  # ID Telegram của bạn
+
+vip_users = set()
+
+API_URL = "https://qualities-likelihood-exemption-face.trycloudflare.com/likes"
+
+# ========== LỆNH LIKE ==========
+async def like(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+
+    if user_id not in vip_users:
+        await update.message.reply_text("❌ Bạn không phải VIP!")
+        return
+
+    if len(context.args) == 0:
+        await update.message.reply_text("⚠️ Dùng: /like uid")
+        return
+
+    uid = context.args[0]
+
+    try:
+        res = requests.get(API_URL, params={"uid": uid})
+        data = res.text
+
+        await update.message.reply_text(
+            f"✅ {data}\n\n🔥 Đã buff like\n🤖 bot by @ducanhdev2"
+        )
+
+    except Exception as e:
+        await update.message.reply_text(f"❌ Lỗi: {e}")
+# ========== ADD VIP ==========
+async def addvip(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_ID:
+        return
+
+    if len(context.args) == 0:
+        await update.message.reply_text("⚠️ Dùng: /addvip user_id")
+        return
+
+    uid = int(context.args[0])
+    vip_users.add(uid)
+    await update.message.reply_text("✅ Đã thêm VIP")
+
+# ========== XOÁ VIP ==========
+async def xoavip(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_ID:
+        return
+
+    if len(context.args) == 0:
+        await update.message.reply_text("⚠️ Dùng: /xoavip user_id")
+        return
+
+    uid = int(context.args[0])
+    vip_users.discard(uid)
+    await update.message.reply_text("🗑 Đã xoá VIP")
+
+# ========== MAIN ==========
+app = ApplicationBuilder().token(TOKEN).build()
+
+app.add_handler(CommandHandler("like", like))
+app.add_handler(CommandHandler("addvip", addvip))
+app.add_handler(CommandHandler("xoavip", xoavip))
+
+print("Bot đang chạy...")
+app.run_polling()
